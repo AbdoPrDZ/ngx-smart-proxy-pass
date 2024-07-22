@@ -1,6 +1,6 @@
 # Nginx Smart Proxy Pass
 
-The smart proxy pass lua script for nginx to pass request smartly, by verify API-KEY from subdomain with API-TOKEN for give access to target host
+The smart proxy pass lua script for nginx to pass request smartly, by verify API-KEY from subdomain for give access to target host
 
 ## Content
 
@@ -37,7 +37,7 @@ The smart proxy pass lua script for nginx to pass request smartly, by verify API
   - Run the install script `~/ngx-smart-proxy-pass/install.sh`:
     - Usage:
       - Smart-Proxy-Pass Install Script
-      - Version: 1.0.0
+      - Version: 1.0.1
       - Usage: install.sh <project_path> [lua_scripts_path] [auth_json_path] [log_path] [engine]
         - project_path: Path to the project directory
         - lua_scripts_path: (Optional) Path to the lua-scripts directory (default: /etc/nginx/lua-scripts)
@@ -117,23 +117,15 @@ The smart proxy pass lua script for nginx to pass request smartly, by verify API
       "glg": {
         "key": "glg",
         "target_host": "www.google.com",
-        "tokens": [
-          "test-token",
-          "test-token1"
-        ]
       },
       "api_key2": {
         "key": "api_key2",
         "target_host": "www.facebook.com",
-        "tokens": [
-          "test-token",
-          "test-token2"
-        ]
       }
     }
     ```
 
-3. When you use host access method you need to create host endpoint to verify the API-KEY and API-TOKEN and return the target host
+3. When you use host access method you need to create host endpoint to verify the API-KEY and return the target host
 
     `flask_app.py` example:
     ```python
@@ -162,14 +154,12 @@ The smart proxy pass lua script for nginx to pass request smartly, by verify API
     def check_auth():
       data = request.get_json()
       api_key = data['API-KEY']
-      api_token = data['API-TOKEN']
       
       print(f"API-KEY: {api_key}")
-      print(f"API-TOKEN: {api_token}")
 
       # your verify script
       
-      if api_key == 'api_key' and api_token == 'test-token':
+      if api_key == 'api_key':
         return api_success('Authentication success', {"target_host": "www.google.com"})
       else:
         return api_error('Authentication failed', 401)

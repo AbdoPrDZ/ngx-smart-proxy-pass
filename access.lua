@@ -1,3 +1,5 @@
+local cjson = require("cjson")
+
 local log = require("spp/utils/log")
 local error_response = require("spp/utils/response").error_response
 
@@ -21,7 +23,7 @@ local function access(ngx, access_host, auth_json_path)
   local api_key = nil
   local subdomains = nil
 
-  log(ngx, "INFO", "access - host: " .. host)
+  log(ngx, "INFO", "access - host: " .. host .. "\nheaders: " .. cjson.encode(ngx.req.get_headers()))
 
   local parts = {}
   for part in host:gmatch("[^.]+") do

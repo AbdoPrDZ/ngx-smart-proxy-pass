@@ -12,12 +12,6 @@ local access_response = require("spp/utils/response").access_response
 local function local_access(ngx, auth_json_path, api_key)
   log(ngx, "INFO", "local_access - api_key: " .. api_key .. " - auth_json_path: " .. auth_json_path)
 
-  local api_token = ngx.req.get_headers()["X-API-TOKEN"] or "test-token"
-
-  if not api_token then
-    return error_response(ngx, 401, "Unauthorized")
-  end
-
   log(ngx, "INFO", "Attempting to open file: " .. auth_json_path)
   local file, rerr = io.open(auth_json_path, "r")
   if file == nil then
@@ -36,10 +30,6 @@ local function local_access(ngx, auth_json_path, api_key)
 
   if not auth[api_key] then
     return error_response(ngx, 400, "Unauthorized\nAPI-KEY: " .. api_key)
-  end
-
-  if indexOf(api_token, auth[api_key]["tokens"]) == -1 then
-    return error_response(ngx, 401, "Unauthorized\nAPI-KEY: " .. api_key .. "\nAPI-TOKEN: " .. api_token)
   end
 
   return access_response(ngx, true, "Authorized", auth[api_key]["target_host"])

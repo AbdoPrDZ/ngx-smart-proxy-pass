@@ -13,13 +13,7 @@ local error_response = require("spp/utils/response").error_response
 local function auth_access(ngx, auth_end_point, api_key)
   log(ngx, "INFO", "auth_access - api_key: " .. api_key)
 
-  local api_token = ngx.req.get_headers()["X-API-TOKEN"] or "test-token"
-
-  if not api_token then
-    return error_response(ngx, 401, "Unauthorized")
-  end
-
-  local body = "{\"API-KEY\": \"" .. api_key .. "\", \"API-TOKEN\": \"" .. api_token .. "\"}"
+  local body = "{\"API-KEY\": \"" .. api_key .. "\"}"
   local res, err = nil, nil
   if not pcall(
     function()
