@@ -6,7 +6,7 @@ local log = require("spp/utils/log")
 ---@param message any The message to log
 ---@param target any The target object
 local function access_response(ngx, success, message, target)
-  log(ngx, "INFO", "access_response - " .. message .. " - " .. (target and target.target or "nil"))
+  log(ngx, "INFO", "access_response - " .. message .. " - " .. (target or "nil"))
   return {
     success = success,
     message = message,
