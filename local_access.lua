@@ -38,11 +38,11 @@ local function local_access(ngx, auth_json_path, api_key)
     return error_response(ngx, 400, "Unauthorized\nAPI-KEY: " .. api_key)
   end
 
-  if indexOf(api_token, auth[api_key]["tokens"]) > -1 then
+  if indexOf(api_token, auth[api_key]["tokens"]) == -1 then
     return error_response(ngx, 401, "Unauthorized\nAPI-KEY: " .. api_key .. "\nAPI-TOKEN: " .. api_token)
   end
 
-  return access_response(ngx, true, "Authorized", auth[api_key]["host"])
+  return access_response(ngx, true, "Authorized", auth[api_key]["target_host"])
 end
 
 return local_access
