@@ -3,18 +3,21 @@
 ---@param level any The log level
 ---@param message any The message to log
 local function log(ngx, level, message)
-  local log_path = ngx.var.log_path
+  local debug = ngx.var.debug or 0
+  if debug then
+    local log_path = ngx.var.log_path
 
-  message = os.date("%Y-%m-%d %H:%M:%S") .. " [" .. level .. "] " .. message
+    message = os.date("%Y-%m-%d %H:%M:%S") .. " [" .. level .. "] " .. message
 
-  local file = io.open(log_path, "a")
-  if file then
-    file:write(message .. "\n")
-    file:close()
-    return
+    local file = io.open(log_path, "a")
+    if file then
+      file:write(message .. "\n")
+      file:close()
+      return
+    end
+
+    ngx.log(ngx.ERR, message)
   end
-  ngx.log(ngx.ERR, message)
-
 end
 
 return log
