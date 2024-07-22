@@ -59,110 +59,133 @@ The smart proxy pass lua script for nginx to pass request smartly, by verify API
 
 ## Usage
 
-Edit your nginx conf and create a `access_by_lua_block` block then put this script
+1. Edit your nginx conf and create a `access_by_lua_block` block then put this script
 
-`nginx.conf` example:
-```conf
-server {
-    listen 80;
-    server_name *.localhost;
+    `nginx.conf` example:
+    ```conf
+    server {
+        listen 80;
+        server_name *.localhost;
 
-    location / {
-        set $target "";
-        set $proxy_host "";
-        set $log_path "/home/abdopr/smart-proxy-pass.log";
+        location / {
+            set $target "";
+            set $proxy_host "";
+            set $log_path "/home/abdopr/smart-proxy-pass.log";
 
-        access_by_lua_block {
-            local spp_access = require("spp.access")
+            access_by_lua_block {
+                local spp_access = require("spp.access")
 
-            -- Using host access
-            local res = spp_access(ngx, "http://127.0.0.1:5000/auth/check", nil)
+                -- Using host access
+                local res = spp_access(ngx, "http://127.0.0.1:5000/auth/check", nil)
 
-            -- Using local auth json file
-            local res = spp_access(ngx, nil, "/home/abdopr/smart-proxy-pass-auth.json")
-            
-            if res.success and res.target then
-                local host = res.target
-                ngx.var.target = "https://" .. host
-                ngx.var.proxy_host = host
-            end
+                -- Using local auth json file
+                local res = spp_access(ngx, nil, "/home/abdopr/smart-proxy-pass-auth.json")
+                
+                if res.success and res.target then
+                    local host = res.target
+                    ngx.var.target = "https://" .. host
+                    ngx.var.proxy_host = host
+                end
+            }
+
+            proxy_pass $target;
+            proxy_set_header Host $proxy_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+
+            # SSL Settings
+            proxy_ssl_server_name on;
+            proxy_ssl_verify off;
+
+            # Buffer Size Settings
+            proxy_buffer_size 16k;
+            proxy_buffers 4 32k;
+            proxy_busy_buffers_size 64k;
         }
 
-        proxy_pass $target;
-        proxy_set_header Host $proxy_host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        # SSL Settings
-        proxy_ssl_server_name on;
-        proxy_ssl_verify off;
-
-        # Buffer Size Settings
-        proxy_buffer_size 16k;
-        proxy_buffers 4 32k;
-        proxy_busy_buffers_size 64k;
+        location ~ /\.ht {
+            deny all;
+        }
     }
+    ```
 
-    location ~ /\.ht {
-        deny all;
+2. When you use local access method you should provide the auth json file.
+    `auth.json` example:
+    ```json
+    {
+      "glg": {
+        "key": "glg",
+        "target_host": "www.google.com",
+        "tokens": [
+          "test-token",
+          "test-token1"
+        ]
+      },
+      "api_key2": {
+        "key": "api_key2",
+        "target_host": "www.facebook.com",
+        "tokens": [
+          "test-token",
+          "test-token2"
+        ]
+      }
     }
-}
-```
+    ```
 
-Note: When you use host access method you need to create host endpoint to verify the API-KEY and API-TOKEN and return the target host
+3. When you use host access method you need to create host endpoint to verify the API-KEY and API-TOKEN and return the target host
 
-`flask_app.py` example:
-```python
-import flask
-from flask import Response, request, jsonify
-
-
-app: flask.Flask = flask.Flask(__name__)
-app.config["DEBUG"] = True
+    `flask_app.py` example:
+    ```python
+    import flask
+    from flask import Response, request, jsonify
 
 
-def api_response(success: bool, message: str, data: dict, status: int = 200) -> Response:
-  return jsonify({
-    'success': success,
-    'message': message,
-    **data,
-  }), status
+    app: flask.Flask = flask.Flask(__name__)
+    app.config["DEBUG"] = True
 
-def api_error(message: str, status: int = 400):
-  return api_response(False, message, {}, status)
 
-def api_success(message: str, data: dict = {}, status: int = 200):
-  return api_response(True, message, data, status)
+    def api_response(success: bool, message: str, data: dict, status: int = 200) -> Response:
+      return jsonify({
+        'success': success,
+        'message': message,
+        **data,
+      }), status
 
-@app.route('/auth/check', methods=['POST'])
-def check_auth():
-  data = request.get_json()
-  api_key = data['API-KEY']
-  api_token = data['API-TOKEN']
-  
-  print(f"API-KEY: {api_key}")
-  print(f"API-TOKEN: {api_token}")
+    def api_error(message: str, status: int = 400):
+      return api_response(False, message, {}, status)
 
-  # your verify script
-  
-  if api_key == 'api_key' and api_token == 'test-token':
-    return api_success('Authentication success', {"target_host": "www.google.com"})
-  else:
-    return api_error('Authentication failed', 401)
+    def api_success(message: str, data: dict = {}, status: int = 200):
+      return api_response(True, message, data, status)
 
-if __name__ == '__main__':
-  app.run(host="0.0.0.0", port=5000)
-```
+    @app.route('/auth/check', methods=['POST'])
+    def check_auth():
+      data = request.get_json()
+      api_key = data['API-KEY']
+      api_token = data['API-TOKEN']
+      
+      print(f"API-KEY: {api_key}")
+      print(f"API-TOKEN: {api_token}")
 
-Note: Your auth check endpoint should returns json response with this form (is important):
-```json
-{
-  "success": true,
-  "message": "your-message",
-  "target_host": "target-host-on-sucess" 
-}
-```
+      # your verify script
+      
+      if api_key == 'api_key' and api_token == 'test-token':
+        return api_success('Authentication success', {"target_host": "www.google.com"})
+      else:
+        return api_error('Authentication failed', 401)
+
+    if __name__ == '__main__':
+      app.run(host="0.0.0.0", port=5000)
+    ```
+
+    Note: Your auth check endpoint should returns json response with this form (is important):
+    ```json
+    {
+      "success": true,
+      "message": "your-message",
+      "target_host": "target-host-on-sucess" 
+    }
+    ```
 
 ## License
 
