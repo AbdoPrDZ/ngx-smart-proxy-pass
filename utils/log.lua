@@ -3,7 +3,7 @@
 ---@param level any The log level
 ---@param message any The message to log
 local function log(ngx, level, message)
-  local debug = ngx.var.debug or 0
+  local debug = ngx.var.spp_debug == "true"
   if debug then
     local log_path = ngx.var.log_path
 
@@ -14,6 +14,8 @@ local function log(ngx, level, message)
       file:write(message .. "\n")
       file:close()
       return
+    else
+      ngx.log(ngx.ERR, "failed to open log file: " .. log_path)
     end
 
     ngx.log(ngx.ERR, message)

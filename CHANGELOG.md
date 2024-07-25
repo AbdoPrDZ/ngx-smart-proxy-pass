@@ -3,3 +3,8 @@
 
 # v1.0.1 - 2024-07-22
  - Remove API-TOKEN
+
+# v1.0.2 - 2024-08-24
+ - Create method to access custom function.
+ - Add access functions examples.
+ 

@@ -7,11 +7,12 @@ local error_response = require("spp/utils/response").error_response
 
 --- Authenticate the request.
 ---@param ngx any The Nginx context
----@param auth_end_point any The auth end point
 ---@param api_key any The API key
 ---@return any The response object
-local function auth_access(ngx, auth_end_point, api_key)
-  log(ngx, "INFO", "auth_access - api_key: " .. api_key)
+local function host_access(ngx, api_key)
+  local auth_end_point = ngx.var.auth_end_point
+
+  log(ngx, "INFO", "host_access - api_key: " .. api_key)
 
   local body = "{\"API-KEY\": \"" .. api_key .. "\"}"
   local res, err = nil, nil
@@ -34,7 +35,7 @@ local function auth_access(ngx, auth_end_point, api_key)
     return error_response(ngx, 500, err)
   end
 
-  log(ngx, "INFO", "auth_access - response: " .. res.body)
+  log(ngx, "INFO", "host_access - response: " .. res.body)
 
   local response = {}
 
@@ -50,10 +51,10 @@ local function auth_access(ngx, auth_end_point, api_key)
     if not response.target then
       return error_response(ngx, 500, "Invalid response from auth server\nbody: " .. res.body)
     end
-    return access_response(ngx, true, "Authorized", response.target)
+    return access_response(ngx, "Authorized", response.target)
   else
     return error_response(ngx, res.status, response.message or "Unauthorized")
   end
 end
 
-return auth_access
+return host_access

@@ -67,19 +67,40 @@ The smart proxy pass lua script for nginx to pass request smartly, by verify API
         listen 80;
         server_name *.localhost;
 
+        # Fix resolver error
+        resolver 1.1.1.1 1.0.0.1 valid=300s;  # Use Cloudflare's DNS servers
+        # resolver 8.8.8.8 8.8.4.4 valid=300s;  # Alternatively, use Google's DNS servers
+        resolver_timeout 5s;
+
         location / {
             set $target "";
             set $proxy_host "";
             set $log_path "/home/abdopr/smart-proxy-pass.log";
+            set $spp_debug true; # spp loggin 
+            
+            set $auth_end_point "http://127.0.0.1:5000/auth/check";
+            set $auth_json_path  "/home/abdopr/smart-proxy-pass-auth.json";
+            set $sql_config  "127.0.0.1,3306,user,password,db_name,utf8,query";
+            set $jwt_secret "jwt_secret";
 
             access_by_lua_block {
                 local spp_access = require("spp.access")
 
                 -- Using host access
-                local res = spp_access(ngx, "http://127.0.0.1:5000/auth/check", nil)
+                local auth_host_access = require("spp.examples.host_access")
+                local res = spp_access(ngx, auth_host_access)
 
                 -- Using local auth json file
-                local res = spp_access(ngx, nil, "/home/abdopr/smart-proxy-pass-auth.json")
+                local auth_json_access = require("spp.examples.json_access")
+                local res = spp_access(ngx, auth_json_access)
+
+                -- Using sql database
+                local auth_sql_access = require("spp.examples.sql_access")
+                local res = spp_access(ngx, auth_sql_access)
+                
+                -- Using jwt token
+                local auth_jwt_access = require("spp.examples.jwt_access")
+                local res = spp_access(ngx, auth_jwt_access)
                 
                 if res.success and res.target then
                     local host = res.target
@@ -88,11 +109,20 @@ The smart proxy pass lua script for nginx to pass request smartly, by verify API
                 end
             }
 
+            # CORS configuration
+            add_header 'Access-Control-Allow-Origin' '*';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+            add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type, X-Requested-With, X-Custom-Header';
+            add_header 'Access-Control-Max-Age' 1728000;
+
             proxy_pass $target;
             proxy_set_header Host $proxy_host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
+
+            # handle IFrame error
+            more_clear_headers "X-Frame-Options";
 
             # SSL Settings
             proxy_ssl_server_name on;
@@ -168,14 +198,16 @@ The smart proxy pass lua script for nginx to pass request smartly, by verify API
       app.run(host="0.0.0.0", port=5000)
     ```
 
-    Note: Your auth check endpoint should returns json response with this form (is important):
-    ```json
-    {
-      "success": true,
-      "message": "your-message",
-      "target_host": "target-host-on-sucess" 
-    }
-    ```
+    #### Notes: 
+    - Your auth check endpoint should returns json response with this form (is important):
+      ```json
+      {
+        "success": true,
+        "message": "your-message",
+        "target_host": "target-host-on-sucess" 
+      }
+      ```
+    - You need to add [lua-resty-http](https://github.com/ledgetech/lua-resty-http) you can add it directly to your lua scripts folder
 
 ## License
 

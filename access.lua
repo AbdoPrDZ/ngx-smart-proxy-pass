@@ -3,21 +3,13 @@ local cjson = require("cjson")
 local log = require("spp/utils/log")
 local error_response = require("spp/utils/response").error_response
 
-local auth_access = require("spp/auth_access")
-local local_access = require("spp/local_access")
-
 --- Access phase handler.
 ---@param ngx any The Nginx context
----@param access_host any The access host
----@param auth_json_path any The path to the auth JSON file
+---@param auth_access any The custom auth access function 
 ---@return any The response object
-local function access(ngx, access_host, auth_json_path)
+local function access(ngx, auth_access)
   assert(ngx, "ngx is required")
-  if not access_host then
-    assert(auth_json_path, "auth_json_path is required")
-  else
-    assert(access_host, "access_host is required")
-  end
+  assert(auth_access, "auth_access is required")
 
   local host = ngx.var.host
   local api_key = nil
@@ -65,11 +57,7 @@ local function access(ngx, access_host, auth_json_path)
 
   log(ngx, "INFO", "access - subdomains: " .. (subdomains or "nil"))
 
-  if access_host then
-    return auth_access(ngx, access_host, api_key)
-  end
-
-  return local_access(ngx, auth_json_path, api_key)
+  return auth_access(ngx, api_key)
 end
 
 return access
