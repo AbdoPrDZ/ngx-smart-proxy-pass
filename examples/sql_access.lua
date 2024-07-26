@@ -74,7 +74,7 @@ local function sql_access(ngx, api_key)
   local db_name = parts[5]
   local charset = parts[7] or "utf8"
   local max_packet_size = parts[8] and tonumber(parts[8]) or (1024 * 1024)
-  local sql_query = parts[9] or ("SELECT `wp_hosts`.`host` FROM `wp_tokens` LEFT JOIN `wp_hosts` ON `wp_tokens`.`host_id` = `wp_hosts`.`id` WHERE `wp_tokens`.`token` = <-api_key-> AND `wp_tokens`.`status` = 'active' AND `wp_tokens`.`expired_at` < CURDATE()")
+  local sql_query = parts[9] or ("SELECT `wp_hosts`.`host` FROM `wp_tokens` LEFT JOIN `wp_hosts` ON `wp_tokens`.`host_id` = `wp_hosts`.`id` WHERE `wp_tokens`.`token` = <-api_key-> AND `wp_tokens`.`status` = 'active' AND `wp_tokens`.`expired_at` > NOW()")
 
   local result = make_connection(ngx, db_host, db_port, db_user, db_pass, db_name, charset, max_packet_size)
 
