@@ -9,7 +9,7 @@
 #   log_path: (Optional) Path to the logs directory (default: /var/log/smart-proxy-pass.log)
 #   engine: (Optional) The server engine you use (default: nginx)
 
-VERSION="1.0.1"
+VERSION="1.0.3"
 
 # Function to display usage information
 usage() {

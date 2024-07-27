@@ -15,7 +15,7 @@ local function access(ngx, auth_access)
   local api_key = nil
   local subdomains = nil
 
-  log(ngx, "INFO", "access - host: " .. host .. "\nheaders: " .. cjson.encode(ngx.req.get_headers()))
+  log(ngx, "INFO", "access - host: " .. host)
 
   local parts = {}
   for part in host:gmatch("[^.]+") do
@@ -28,11 +28,11 @@ local function access(ngx, auth_access)
     if #parts == 1 then
       return error_response(ngx, 400, "Invalid host " .. host)
     end
-    api_key = parts[1]
+    api_key = parts[#parts - 1]
 
     if #parts > 2 then
       subdomains = {}
-      for i = 2, #parts do
+      for i = 1, #parts - 1 do
         table.insert(subdomains, parts[i])
       end
       -- join subdomains
@@ -43,11 +43,11 @@ local function access(ngx, auth_access)
     if #parts == 2 then
       return error_response(ngx, 400, "Invalid host" .. host)
     end
-    api_key = parts[1]
+    api_key = parts[#parts - 2]
 
     if #parts > 3 then
       subdomains = {}
-      for i = 2, #parts - 1 do
+      for i = 1, #parts - 2 do
         table.insert(subdomains, parts[i])
       end
       -- join subdomains

@@ -132,6 +132,28 @@ The smart proxy pass lua script for nginx to pass request smartly, by verify API
             proxy_buffer_size 16k;
             proxy_buffers 4 32k;
             proxy_busy_buffers_size 64k;
+
+            # Body filter
+            body_filter_by_lua_block {
+                local body_filter = require("spp.examples.body_filter")
+                local chunk, eof = ngx.arg[1], ngx.arg[2]
+
+                if ngx.header["Content-Type"]:find("text/html") then
+                    -- Append the filtered chunk to the variable
+                    ngx.ctx.buffered = (ngx.ctx.buffered or "") .. chunk
+
+                    if eof then
+                        -- Finalize the response body when the end of the response is reached
+                        ngx.header["Content-Length"] = tostring(#ngx.ctx.buffered)
+                        ngx.arg[1] = body_filter(ngx, ngx.ctx.buffered)
+                    else
+                        -- Discard the original chunk
+                        ngx.arg[1] = nil
+                    end
+                else
+                    ngx.arg[1] = chunk
+                end
+            }
         }
 
         location ~ /\.ht {
