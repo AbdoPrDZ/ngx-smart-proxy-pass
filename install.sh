@@ -2,10 +2,9 @@
 
 # Script to install the Smart-Proxy-Pass project folder as a symbolic link in the lua-scripts folder
 # This script will also set the permissions for the project folder and its subfolders
-# Usage: ./install.sh <project_path> [lua_scripts_path] [auth_json_path] [log_path] [engine]
+# Usage: ./install.sh <project_path> [lua_scripts_path] [log_path] [engine]
 #   project_path: Path to the project directory
 #   lua_scripts_path: (Optional) Path to the lua-scripts directory (default: /etc/nginx/lua-scripts)
-#   auth_json_path: (Optional) Path to the auth.json file (default: /etc/smart-proxy-pass/auth.json)
 #   log_path: (Optional) Path to the logs directory (default: /var/log/smart-proxy-pass.log)
 #   engine: (Optional) The server engine you use (default: nginx)
 
@@ -16,10 +15,9 @@ usage() {
   echo "Smart-Proxy-Pass Install Script"
   echo "Version: $VERSION"
   echo ""
-  echo "Usage: $0 <project_path> [lua_scripts_path] [auth_json_path] [log_path] [engine]"
+  echo "Usage: $0 <project_path> [lua_scripts_path] [log_path] [engine]"
   echo "  project_path: Path to the project directory"
   echo "  lua_scripts_path: (Optional) Path to the lua-scripts directory (default: /etc/nginx/lua-scripts)"
-  echo "  auth_json_path: (Optional) Path to the auth.json file (default: /etc/smart-proxy-pass/auth.json)"
   echo "  log_path: (Optional) Path to the logs directory (default: /var/log/smart-proxy-pass.log)"
   echo "  engine: (Optional) The server engine you use (default: nginx)"
   exit 1
@@ -80,18 +78,6 @@ echo "Setting permissions for VS Code access"
 sudo chmod -R 775 "$project_path"
 sudo chown -R "$(whoami)":"$(whoami)" "$project_path"
 
-# Get the auth.json path (default: "/etc/smart-proxy-pass/auth.json")
-auth_json_path=${3:-"/etc/smart-proxy-pass/auth.json"}
-# Check if the auth.json file does not exist
-if [ -f "$auth_json_path" ]; then
-  # Set read permissions for the auth json file
-  echo "Setting read permissions for $auth_json_path file"
-  sudo chmod 644 "$auth_json_path"
-  sudo chown www-data:www-data "$auth_json_path"
-else
-  echo "Warning: auth.json file does not exist at $auth_json_path"
-fi
-
 # Get the log path (default: "/var/log/smart-proxy-pass.log")
 log_path=${4:-"/var/log/smart-proxy-pass.log"}
 # Check if the log file is exists
@@ -116,14 +102,8 @@ sudo chown www-data:www-data "$log_path"
 
 # Reload server engine
 echo "Reloading server engine"
-engine=${5:-"nginx"}
+engine=${4:-"nginx"}
 sudo service $engine reload
-
-# Display note
-echo "Note:"
-echo " - Make sure to set log file path in your nginx config"
-echo "     Example: set \$auth_json_path \"$auth_json_path\""
-
 
 # Display success message
 echo "Script completed successfully"

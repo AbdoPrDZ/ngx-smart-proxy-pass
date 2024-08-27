@@ -1,5 +1,5 @@
 local log = require("spp/utils/log")
-local zlib = require("zlib")
+-- local zlib = require("zlib")
 
 -- local function decode_gzip(ngx, data)
 --   local status, stream = pcall(zlib.inflate)
@@ -43,8 +43,8 @@ local function body_filter(ngx, body)
   log(ngx, "INFO", "body_filter - is_gzip: " .. (is_gzip and "true" or "false"))
 
   log(ngx, "INFO", "body_filter - host: " .. host)
-  log(ngx, "INFO", "body_filter - target_host: " .. target_host)
-
+  log(ngx, "INFO", "body_filter - proxy_host: " .. target_host)
+  log(ngx, "INFO", "body_filter - body: " .. #body)
 
   if not body or target_host == nil or target_host == "" then
     return body
@@ -61,7 +61,7 @@ local function body_filter(ngx, body)
     host = table.concat({hostParts[#hostParts - 2], hostParts[#hostParts - 1], hostParts[#hostParts]}, '.')
   end
 
-  log(ngx, "INFO", "body_filter - host: " .. host)
+  log(ngx, "INFO", "body_filter - fhost: " .. host)
 
   local parts = {}
   for part in target_host:gmatch("[^.]+") do
@@ -83,9 +83,8 @@ local function body_filter(ngx, body)
   --   body = body
   -- end
 
-  log(ngx, "INFO", "find https " .. (body:find("https") or "nil"))
-
-  body = string.gsub(body, "https:" .. target_host, "http:" .. target_host)
+  body = string.gsub(body, "https://", "http://")
+  body = string.gsub(body, "https%%3A%%2F%%2", "http%%3A%%2F%%2")
   body = string.gsub(body, "www." .. target_host, host)
   body = string.gsub(body, target_host, host)
 
@@ -99,8 +98,6 @@ local function body_filter(ngx, body)
   -- else
   --   ngx.header["Content-Encoding"] = "html"  -- Remove Content-Encoding header if the content is not gzipped
   -- end
-
-  log(ngx, "INFO", "filtered_data: " .. body)
 
   return body
 end

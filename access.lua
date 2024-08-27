@@ -9,7 +9,7 @@ local error_response = require("spp/utils/response").error_response
 ---@return any The response object
 local function access(ngx, auth_access)
   assert(ngx, "ngx is required")
-  assert(auth_access, "auth_access is required")
+  -- assert(auth_access, "auth_access is required")
 
   local host = ngx.var.host
   local api_key = nil
